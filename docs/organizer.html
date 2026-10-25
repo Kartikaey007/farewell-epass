@@ -1,6 +1,4 @@
 const STORAGE_KEY = 'montfortFarewellPasses';
-const LEGACY_KEY = 'farewellEpassDemo';
-const PASS_LIMIT = 300;
 
 const form = document.getElementById('studentForm');
 const studentNameInput = document.getElementById('studentName');
@@ -17,30 +15,16 @@ function normalizePhone(value) {
 
 function getStoredPasses() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
   } catch (error) {
-    console.warn('Could not parse current pass data', error);
+    console.warn('Could not parse stored pass data', error);
+    return [];
   }
-
-  try {
-    const legacy = localStorage.getItem(LEGACY_KEY);
-    if (legacy) {
-      const parsed = JSON.parse(legacy);
-      if (Array.isArray(parsed)) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-        return parsed;
-      }
-    }
-  } catch (error) {
-    console.warn('Could not parse legacy pass data', error);
-  }
-
-  return [];
 }
 
 function savePasses(items) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, PASS_LIMIT)));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, 300)));
 }
 
 function generatePassCode() {
@@ -63,8 +47,12 @@ function renderPreview(pass) {
   previewName.textContent = name;
   previewPhone.textContent = phone;
   previewCode.textContent = id;
-  statusPill.textContent = pass?.status || 'Pending';
-  statusPill.style.color = pass?.status === 'Checked In' ? '#52dbb5' : '#f6dca8';
+
+  if (statusPill) {
+    const state = pass?.status || 'Pending';
+    statusPill.textContent = state;
+    statusPill.style.color = state === 'Checked In' ? '#52dbb5' : '#f6dca8';
+  }
 
   const payload = JSON.stringify({
     id: pass?.id || '',
@@ -75,7 +63,7 @@ function renderPreview(pass) {
 
   safeCanvasClear();
 
-  if (pass?.id) {
+  if (pass?.id && window.QRCode) {
     QRCode.toCanvas(
       canvas,
       payload,
@@ -97,12 +85,11 @@ function renderPreview(pass) {
 }
 
 function createPassRecord(name, phone) {
-  const timestamp = new Date().toISOString();
   return {
     id: generatePassCode(),
     name,
     phone,
-    createdAt: timestamp,
+    createdAt: new Date().toISOString(),
     scannedAt: '',
     status: 'Pending',
   };
@@ -110,8 +97,7 @@ function createPassRecord(name, phone) {
 
 function storePass(pass) {
   const list = getStoredPasses();
-  const updated = [pass, ...list];
-  savePasses(updated);
+  savePasses([pass, ...list]);
 }
 
 form.addEventListener('submit', function (event) {
@@ -131,12 +117,29 @@ form.addEventListener('submit', function (event) {
   form.reset();
 });
 
+function fallbackCopy(value) {
+  const helper = document.createElement('textarea');
+  helper.value = value;
+  document.body.appendChild(helper);
+  helper.select();
+
+  try {
+    document.execCommand('copy');
+    alert('Pass ID copied.');
+  } catch (error) {
+    alert('Copy failed. Please copy the pass ID manually: ' + value);
+  }
+
+  document.body.removeChild(helper);
+}
+
 function copyCode() {
   const code = previewCode.textContent;
   if (!code || code === '--') return;
 
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(code)
+    navigator.clipboard
+      .writeText(code)
       .then(() => alert('Pass ID copied.'))
       .catch(() => fallbackCopy(code));
     return;
@@ -145,28 +148,14 @@ function copyCode() {
   fallbackCopy(code);
 }
 
-function fallbackCopy(value) {
-  const helper = document.createElement('textarea');
-  helper.value = value;
-  document.body.appendChild(helper);
-  helper.select();
-  try {
-    document.execCommand('copy');
-    alert('Pass ID copied.');
-  } catch (error) {
-    alert('Copy failed. Please copy the pass ID manually: ' + value);
-  }
-  document.body.removeChild(helper);
+if (document.getElementById('copyPass')) {
+  document.getElementById('copyPass').addEventListener('click', copyCode);
 }
 
-document.getElementById('copyPass').addEventListener('click', copyCode);
-
-const initialPass = {
+renderPreview({
   id: 'MWS-2026-DEMO',
   name: 'Montfort Student',
   phone: '+91 98765 43210',
   createdAt: new Date().toISOString(),
   status: 'Pending',
-};
-
-renderPreview(initialPass);
+});
