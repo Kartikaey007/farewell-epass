@@ -1,146 +1,99 @@
-const ORGANIZER_PIN = (window.APP_CONFIG && window.APP_CONFIG.organizerPin) || 'montfort2026';
-const STORAGE_KEY = 'montfortFarewellPasses';
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Organizer Portal | Montfort Farewell</title>
+    <meta name="description" content="Event organizer portal for scanning farewell e-pass QR codes." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero-banner" style="min-height: 240px;">
+      <div class="hero-overlay"></div>
+      <div class="hero-content" style="padding-bottom: 1.5rem;">
+        <div class="brand-row">
+          <img src="logo.svg" alt="Montfort logo" class="brand-logo" />
+          <div class="brand-copy">
+            <p class="small-label">Organizer Panel</p>
+            <h1 style="letter-spacing: 0.15em;">MONTFORT</h1>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <h2 style="font-size: clamp(2.7rem, 7vw, 5.5rem);">FAREWELL 2026</h2>
+      </div>
+    </header>
 
-const pinScreen = document.getElementById('pinScreen');
-const dashboard = document.getElementById('dashboard');
-const pinInput = document.getElementById('pinInput');
-const pinSubmit = document.getElementById('pinSubmit');
-const totalPasses = document.getElementById('totalPasses');
-const checkedInCount = document.getElementById('checkedInCount');
-const pendingCount = document.getElementById('pendingCount');
-const entryTableBody = document.getElementById('entryTableBody');
-const scanResult = document.getElementById('scanResult');
+    <main class="organizer-shell">
+      <section class="organizer-panel">
+        <div class="organizer-header">
+          <h3>Entry Manager</h3>
+          <a class="header-link" href="index.html">Student portal</a>
+        </div>
 
-let scanner = null;
+        <div id="pinScreen">
+          <div class="pin-box">
+            <label>Enter organizer PIN</label>
+            <input id="pinInput" type="password" placeholder="••••••" />
+            <button id="pinSubmit" class="pin-btn" type="button">Open dashboard</button>
+          </div>
+        </div>
 
-function getPasses() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
+        <div id="dashboard" class="dashboard">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <small>Total Passes</small>
+              <strong id="totalPasses">0</strong>
+            </div>
+            <div class="stat-card">
+              <small>Checked In</small>
+              <strong id="checkedInCount">0</strong>
+            </div>
+            <div class="stat-card">
+              <small>Pending</small>
+              <strong id="pendingCount">0</strong>
+            </div>
+          </div>
 
-function savePasses(items) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
+          <div class="scanner-layout">
+            <div>
+              <div id="reader"></div>
+              <div class="scanner-actions">
+                <button id="startScan" class="scan-btn" type="button">Start QR Scan</button>
+                <button id="stopScan" class="reset-btn" type="button">Stop</button>
+              </div>
+            </div>
 
-function renderStats() {
-  const items = getPasses();
-  const total = items.length;
-  const checked = items.filter((item) => item.status === 'Checked In').length;
-  const pending = total - checked;
+            <div class="scanner-status-box">
+              <h4>Last scan</h4>
+              <div id="scanResult">Waiting for QR scan...</div>
+            </div>
+          </div>
 
-  totalPasses.textContent = total;
-  checkedInCount.textContent = checked;
-  pendingCount.textContent = pending;
+          <div style="margin-top: 1.5rem;">
+            <h4 style="margin:0 0 0.5rem;">Registered entries</h4>
+            <div class="entry-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Pass ID</th>
+                    <th>Status</th>
+                    <th>Scanned at</th>
+                  </tr>
+                </thead>
+                <tbody id="entryTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
 
-  entryTableBody.innerHTML = items
-    .slice()
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .map((item) => {
-      const statusClass = item.status === 'Checked In' ? 'checked' : 'pending';
-      return `
-        <tr>
-          <td>${item.name}</td>
-          <td>${item.phone}</td>
-          <td>${item.id}</td>
-          <td><span class="status-badge ${statusClass}">${item.status}</span></td>
-          <td>${item.scannedAt ? new Date(item.scannedAt).toLocaleString() : '—'}</td>
-        </tr>
-      `;
-    })
-    .join('');
-}
-
-function authenticate() {
-  const entered = pinInput.value.trim();
-  if (entered === ORGANIZER_PIN) {
-    pinScreen.style.display = 'none';
-    dashboard.classList.add('active');
-    renderStats();
-    return;
-  }
-
-  alert('Incorrect organizer PIN.');
-}
-
-pinSubmit.addEventListener('click', authenticate);
-pinInput.addEventListener('keydown', function (event) {
-  if (event.key === 'Enter') authenticate();
-});
-
-function updateEntryStatus(passId) {
-  const items = getPasses();
-  const index = items.findIndex((item) => item.id === passId);
-
-  if (index === -1) {
-    scanResult.innerHTML = 'Pass not found in the system.';
-    return;
-  }
-
-  const item = items[index];
-  item.status = 'Checked In';
-  item.scannedAt = new Date().toISOString();
-  savePasses(items);
-  renderStats();
-
-  scanResult.innerHTML = `
-    <strong>${item.name}</strong><br />
-    Phone: ${item.phone}<br />
-    Pass ID: ${item.id}<br />
-    Checked in at: ${new Date(item.scannedAt).toLocaleString()}
-  `;
-}
-
-function handleScanSuccess(decodedText) {
-  try {
-    const parsed = JSON.parse(decodedText);
-    if (parsed && parsed.id) {
-      updateEntryStatus(parsed.id);
-      if (scanner) {
-        scanner.stop().catch(() => {});
-      }
-    }
-  } catch (error) {
-    scanResult.innerHTML = 'QR code is valid but not in the expected pass format.';
-  }
-}
-
-function handleScanFailure() {
-  // silent: avoid constant noise from non-QR frames
-}
-
-async function startScanner() {
-  if (!window.Html5Qrcode) {
-    scanResult.innerHTML = 'QR scanner library failed to load.';
-    return;
-  }
-
-  const devices = await Html5Qrcode.getCameras();
-  if (!devices || devices.length === 0) {
-    scanResult.innerHTML = 'No camera device found.';
-    return;
-  }
-
-  scanner = new Html5Qrcode('reader');
-  await scanner.start(
-    devices[0].id,
-    { fps: 10, qrbox: { width: 260, height: 260 } },
-    handleScanSuccess,
-    handleScanFailure
-  );
-
-  scanResult.innerHTML = 'Scanner active. Point the camera at a pass QR code.';
-}
-
-document.getElementById('startScan').addEventListener('click', startScanner);
-document.getElementById('stopScan').addEventListener('click', function () {
-  if (scanner) {
-    scanner.stop().catch(() => {});
-    scanResult.innerHTML = 'Scanner stopped.';
-  }
-});
-
-renderStats();
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+    <script src="organizer.js"></script>
+  </body>
+</html>

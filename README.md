@@ -1,65 +1,173 @@
-# Montfort World School Farewell E-Pass
+const ORGANIZER_PIN = 'montfort2026';
+const STORAGE_KEY = 'montfortFarewellPasses';
 
-A dark, premium farewell entry system for Montfort World School with:
-- student pass generation
-- QR-based entry pass
-- organizer dashboard with PIN access
-- live QR code scanning for gate entry
-- browser-based storage for demo mode
+const pinScreen = document.getElementById('pinScreen');
+const dashboard = document.getElementById('dashboard');
+const pinInput = document.getElementById('pinInput');
+const pinSubmit = document.getElementById('pinSubmit');
+const totalPasses = document.getElementById('totalPasses');
+const checkedInCount = document.getElementById('checkedInCount');
+const pendingCount = document.getElementById('pendingCount');
+const entryTableBody = document.getElementById('entryTableBody');
+const scanResult = document.getElementById('scanResult');
 
-## Quick start
+let scanner = null;
+let scannerRunning = false;
 
-1. Open the student portal:
-   - `docs/index.html`
-2. Open the organizer portal:
-   - `docs/organizer.html`
-3. Default organizer PIN:
-   - `montfort2026`
+function getPasses() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Pass storage read failed', error);
+    return [];
+  }
+}
 
-## Local run
+function savePasses(items) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
 
-From the repo root:
+function renderStats() {
+  const items = getPasses();
+  const total = items.length;
+  const checked = items.filter((item) => item.status === 'Checked In').length;
+  const pending = total - checked;
 
-```bash
-cd docs
-python3 -m http.server 8000
-```
+  totalPasses.textContent = String(total);
+  checkedInCount.textContent = String(checked);
+  pendingCount.textContent = String(pending);
 
-Then open:
-- `http://localhost:8000/index.html`
-- `http://localhost:8000/organizer.html`
+  entryTableBody.innerHTML = items
+    .slice()
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .map((item) => {
+      const statusClass = item.status === 'Checked In' ? 'checked' : 'pending';
+      return `
+        <tr>
+          <td>${item.name || 'Unknown'}</td>
+          <td>${item.phone || '—'}</td>
+          <td>${item.id || '—'}</td>
+          <td><span class="status-badge ${statusClass}">${item.status || 'Pending'}</span></td>
+          <td>${item.scannedAt ? new Date(item.scannedAt).toLocaleString() : '—'}</td>
+        </tr>
+      `;
+    })
+    .join('');
+}
 
-## GitHub Pages deployment
+function authenticate() {
+  const entered = pinInput.value.trim();
+  if (entered === ORGANIZER_PIN) {
+    pinScreen.style.display = 'none';
+    dashboard.classList.add('active');
+    renderStats();
+    return;
+  }
 
-This repo is configured for GitHub Pages using the `/docs` folder.
+  alert('Incorrect organizer PIN.');
+}
 
-1. Go to GitHub repo settings.
-2. Open `Pages`.
-3. Choose `Deploy from a branch`.
-4. Set branch to `main` and folder to `/docs`.
-5. Save.
+pinSubmit.addEventListener('click', authenticate);
+pinInput.addEventListener('keydown', function (event) {
+  if (event.key === 'Enter') authenticate();
+});
 
-Your site will be available at:
-`https://<your-username>.github.io/<repo-name>/`
+function updateEntryStatus(passId) {
+  const items = getPasses();
+  const index = items.findIndex((item) => item.id === passId);
 
-## Backend upgrade path
+  if (index === -1) {
+    scanResult.innerHTML = 'Pass not found in the system.';
+    return;
+  }
 
-This version is a fully functional front-end prototype with local browser storage. For a real multi-device backend, connect the app to Supabase or Firebase and keep the same frontend.
+  const item = items[index];
+  item.status = 'Checked In';
+  item.scannedAt = new Date().toISOString();
+  savePasses(items);
+  renderStats();
 
-### Supabase setup
+  scanResult.innerHTML = `
+    <strong>${item.name}</strong><br />
+    Phone: ${item.phone}<br />
+    Pass ID: ${item.id}<br />
+    Checked in at: ${new Date(item.scannedAt).toLocaleString()}
+  `;
+}
 
-1. Create a new Supabase project.
-2. Create table `farewell_passes` with fields:
-   - `id` text primary key
-   - `name` text
-   - `phone` text
-   - `created_at` timestamptz
-   - `scanned_at` timestamptz nullable
-   - `status` text default 'Pending'
-3. Replace the default local-only logic in `app.js` and `organizer.js` with your Supabase client calls.
+function handleScanSuccess(decodedText) {
+  try {
+    const parsed = JSON.parse(decodedText);
+    if (parsed && parsed.id) {
+      updateEntryStatus(parsed.id);
+      return;
+    }
+  } catch (error) {
+    // ignore parsing errors, used for invalid QR data
+  }
 
-## Notes
+  scanResult.innerHTML = 'QR code is valid but not in the expected pass format.';
+}
 
-- The app is designed for the Montfort World School farewell event.
-- The logo sits in `docs/logo.svg` and can be replaced with the school’s official brand image.
-- QR scans work in browser camera mode for organizer validation.
+async function startScanner() {
+  if (!window.Html5Qrcode) {
+    scanResult.innerHTML = 'QR scanner library failed to load.';
+    return;
+  }
+
+  if (scannerRunning && scanner) {
+    scanResult.innerHTML = 'Scanner is already running.';
+    return;
+  }
+
+  try {
+    const devices = await Html5Qrcode.getCameras();
+    if (!devices || devices.length === 0) {
+      scanResult.innerHTML = 'No camera device found.';
+      return;
+    }
+
+    scanner = new Html5Qrcode('reader');
+    scannerRunning = true;
+
+    await scanner.start(
+      devices[0].id,
+      { fps: 10, qrbox: { width: 260, height: 260 } },
+      handleScanSuccess,
+      () => {}
+    );
+
+    scanResult.innerHTML = 'Scanner active. Point the camera at a pass QR code.';
+  } catch (error) {
+    scannerRunning = false;
+    console.error('Failed to start scanner:', error);
+    scanResult.innerHTML = 'Unable to start the camera scanner. Please allow camera access and retry.';
+  }
+}
+
+async function stopScanner() {
+  if (!scanner) {
+    scanResult.innerHTML = 'Scanner is not running.';
+    return;
+  }
+
+  try {
+    await scanner.stop();
+    scanResult.innerHTML = 'Scanner stopped.';
+  } catch (error) {
+    console.warn('Scanner stop error', error);
+    scanResult.innerHTML = 'Scanner stopped.';
+  } finally {
+    scannerRunning = false;
+  }
+}
+
+document.getElementById('startScan').addEventListener('click', startScanner);
+document.getElementById('stopScan').addEventListener('click', stopScanner);
+
+window.addEventListener('storage', renderStats);
+renderStats();
+

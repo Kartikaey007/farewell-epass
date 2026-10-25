@@ -1,244 +1,172 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Organizer Portal | Montfort Farewell</title>
-    <meta name="description" content="Event organizer portal for scanning farewell e-pass QR codes." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
-    <style>
-      .organizer-shell {
-        max-width: 1200px;
-        margin: 2rem auto 3rem;
-        padding: 0 1.25rem;
-      }
+const STORAGE_KEY = 'montfortFarewellPasses';
+const LEGACY_KEY = 'farewellEpassDemo';
+const PASS_LIMIT = 300;
 
-      .organizer-panel {
-        background: rgba(11, 20, 33, 0.78);
-        border: 1px solid rgba(246, 209, 130, 0.22);
-        border-radius: 28px;
-        padding: 1.5rem;
-        box-shadow: 0 22px 48px rgba(1, 4, 10, 0.72);
-      }
+const form = document.getElementById('studentForm');
+const studentNameInput = document.getElementById('studentName');
+const phoneInput = document.getElementById('phoneNumber');
+const previewName = document.getElementById('previewName');
+const previewPhone = document.getElementById('previewPhone');
+const previewCode = document.getElementById('previewCode');
+const canvas = document.getElementById('qrCanvas');
+const statusPill = document.getElementById('statusPill');
 
-      .organizer-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-      }
+function normalizePhone(value) {
+  return value.replace(/\s+/g, '').trim();
+}
 
-      .organizer-header h3 {
-        margin: 0;
-        font-size: 2rem;
-      }
+function getStoredPasses() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (error) {
+    console.warn('Could not parse current pass data', error);
+  }
 
-      .pin-box {
-        max-width: 420px;
-        display: grid;
-        gap: 0.9rem;
-        margin: 1rem auto 0;
+  try {
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    if (legacy) {
+      const parsed = JSON.parse(legacy);
+      if (Array.isArray(parsed)) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        return parsed;
       }
+    }
+  } catch (error) {
+    console.warn('Could not parse legacy pass data', error);
+  }
 
-      .pin-box input {
-        width: 100%;
-        border: 1px solid rgba(246, 209, 130, 0.18);
-        background: rgba(8, 13, 22, 0.95);
-        border-radius: 16px;
-        padding: 0.95rem 1rem;
-        color: white;
-      }
+  return [];
+}
 
-      .dashboard {
-        display: none;
-      }
+function savePasses(items) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, PASS_LIMIT)));
+}
 
-      .dashboard.active {
-        display: block;
-      }
+function generatePassCode() {
+  const random = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `MWS-${new Date().getFullYear()}-${random}`;
+}
 
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1rem;
-        margin-bottom: 1.2rem;
-      }
+function safeCanvasClear() {
+  const context = canvas.getContext('2d');
+  if (context) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+  }
+}
 
-      .stat-card {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(246, 209, 130, 0.16);
-        border-radius: 18px;
-        padding: 1rem;
-      }
+function renderPreview(pass) {
+  const name = pass?.name || 'Your Name';
+  const phone = pass?.phone || '+91 ---------';
+  const id = pass?.id || '--';
 
-      .stat-card small {
-        display: block;
-        color: var(--muted);
-        margin-bottom: 0.4rem;
-      }
+  previewName.textContent = name;
+  previewPhone.textContent = phone;
+  previewCode.textContent = id;
+  statusPill.textContent = pass?.status || 'Pending';
+  statusPill.style.color = pass?.status === 'Checked In' ? '#52dbb5' : '#f6dca8';
 
-      .stat-card strong {
-        font-size: clamp(1.7rem, 3vw, 2.4rem);
-      }
+  const payload = JSON.stringify({
+    id: pass?.id || '',
+    name,
+    phone,
+    createdAt: pass?.createdAt || new Date().toISOString(),
+  });
 
-      .scanner-layout {
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 1.2rem;
-      }
+  safeCanvasClear();
 
-      #reader {
-        width: 100%;
-        min-height: 320px;
-        border-radius: 20px;
-        overflow: hidden;
-        border: 1px solid rgba(246, 209, 130, 0.22);
-        background: rgba(2, 7, 12, 0.8);
-      }
-
-      .scanner-actions {
-        display: flex;
-        gap: 0.75rem;
-        margin-top: 1rem;
-        flex-wrap: wrap;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 0.8rem;
-      }
-
-      th,
-      td {
-        text-align: left;
-        padding: 0.85rem 0.75rem;
-        border-bottom: 1px solid rgba(246, 209, 130, 0.14);
-      }
-
-      th {
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--muted);
-        font-size: 0.72rem;
-      }
-
-      .status-badge {
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0.38rem 0.7rem;
-        border-radius: 999px;
-        font-size: 0.7rem;
-        font-weight: 700;
-      }
-
-      .status-badge.checked {
-        background: rgba(82, 219, 181, 0.1);
-        color: var(--success);
-      }
-
-      .status-badge.pending {
-        background: rgba(240, 200, 127, 0.12);
-        color: var(--gold-soft);
-      }
-
-      @media (max-width: 900px) {
-        .scanner-layout,
-        .stats-grid {
-          grid-template-columns: 1fr;
+  if (pass?.id) {
+    QRCode.toCanvas(
+      canvas,
+      payload,
+      {
+        width: 220,
+        margin: 1,
+        color: {
+          dark: '#0a1626',
+          light: '#f9f4ef',
+        },
+      },
+      function (error) {
+        if (error) {
+          console.error('QR generation failed', error);
         }
       }
-    </style>
-  </head>
-  <body>
-    <header class="hero-banner" style="min-height: 240px;">
-      <div class="hero-overlay"></div>
-      <div class="hero-content" style="padding-bottom: 1.5rem;">
-        <div class="brand-row">
-          <img src="logo.svg" alt="Montfort logo" class="brand-logo" />
-          <div class="brand-copy">
-            <p class="small-label">Organizer Panel</p>
-            <h1 style="letter-spacing: 0.15em;">MONTFORT</h1>
-          </div>
-        </div>
-        <div class="divider"></div>
-        <h2 style="font-size: clamp(2.7rem, 7vw, 5.5rem);">FAREWELL 2026</h2>
-      </div>
-    </header>
+    );
+  }
+}
 
-    <main class="organizer-shell">
-      <section class="organizer-panel">
-        <div class="organizer-header">
-          <h3>Entry Manager</h3>
-          <a class="header-link" href="index.html">Student portal</a>
-        </div>
+function createPassRecord(name, phone) {
+  const timestamp = new Date().toISOString();
+  return {
+    id: generatePassCode(),
+    name,
+    phone,
+    createdAt: timestamp,
+    scannedAt: '',
+    status: 'Pending',
+  };
+}
 
-        <div id="pinScreen">
-          <div class="pin-box">
-            <label style="color: var(--muted);">Enter organizer PIN</label>
-            <input id="pinInput" type="password" placeholder="••••••" />
-            <button id="pinSubmit" class="pin-btn" type="button">Open dashboard</button>
-          </div>
-        </div>
+function storePass(pass) {
+  const list = getStoredPasses();
+  const updated = [pass, ...list];
+  savePasses(updated);
+}
 
-        <div id="dashboard" class="dashboard">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <small>Total Passes</small>
-              <strong id="totalPasses">0</strong>
-            </div>
-            <div class="stat-card">
-              <small>Checked In</small>
-              <strong id="checkedInCount">0</strong>
-            </div>
-            <div class="stat-card">
-              <small>Pending</small>
-              <strong id="pendingCount">0</strong>
-            </div>
-          </div>
+form.addEventListener('submit', function (event) {
+  event.preventDefault();
 
-          <div class="scanner-layout">
-            <div>
-              <div id="reader"></div>
-              <div class="scanner-actions">
-                <button id="startScan" class="scan-btn" type="button">Start QR Scan</button>
-                <button id="stopScan" class="reset-btn" type="button">Stop</button>
-              </div>
-            </div>
+  const name = studentNameInput.value.trim();
+  const phone = normalizePhone(phoneInput.value);
 
-            <div class="scanner-status-box" style="background: rgba(255,255,255,0.02); border:1px solid rgba(246,209,130,0.16); border-radius:18px; padding:1rem; min-height: 220px;">
-              <h4 style="margin-top:0;">Last scan</h4>
-              <div id="scanResult" style="color: var(--muted); line-height: 1.7;">Waiting for QR scan...</div>
-            </div>
-          </div>
+  if (!name || !phone) {
+    alert('Please enter both your name and phone number.');
+    return;
+  }
 
-          <div style="margin-top: 1.5rem;">
-            <h4 style="margin:0 0 0.5rem;">Registered entries</h4>
-            <div style="overflow-x:auto;">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Pass ID</th>
-                    <th>Status</th>
-                    <th>Scanned at</th>
-                  </tr>
-                </thead>
-                <tbody id="entryTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
+  const pass = createPassRecord(name, phone);
+  storePass(pass);
+  renderPreview(pass);
+  form.reset();
+});
 
-    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
-    <script src="organizer.js"></script>
-  </body>
-</html>
+function copyCode() {
+  const code = previewCode.textContent;
+  if (!code || code === '--') return;
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(code)
+      .then(() => alert('Pass ID copied.'))
+      .catch(() => fallbackCopy(code));
+    return;
+  }
+
+  fallbackCopy(code);
+}
+
+function fallbackCopy(value) {
+  const helper = document.createElement('textarea');
+  helper.value = value;
+  document.body.appendChild(helper);
+  helper.select();
+  try {
+    document.execCommand('copy');
+    alert('Pass ID copied.');
+  } catch (error) {
+    alert('Copy failed. Please copy the pass ID manually: ' + value);
+  }
+  document.body.removeChild(helper);
+}
+
+document.getElementById('copyPass').addEventListener('click', copyCode);
+
+const initialPass = {
+  id: 'MWS-2026-DEMO',
+  name: 'Montfort Student',
+  phone: '+91 98765 43210',
+  createdAt: new Date().toISOString(),
+  status: 'Pending',
+};
+
+renderPreview(initialPass);

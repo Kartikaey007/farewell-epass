@@ -1,111 +1,553 @@
-const APP_CONFIG = window.APP_CONFIG || {
-  organizerPin: 'montfort2026',
-  useSupabase: false,
-  supabaseUrl: '',
-  supabaseAnonKey: '',
-};
+* {
+  box-sizing: border-box;
+}
 
-const STORAGE_KEY = 'montfortFarewellPasses';
-const PASS_LIMIT = 200;
+:root {
+  --bg-deep: #060c15;
+  --bg-dark: #0b1421;
+  --bg-mid: #111d2d;
+  --panel: rgba(11, 20, 33, 0.78);
+  --panel-strong: rgba(18, 27, 40, 0.9);
+  --panel-soft: rgba(255, 255, 255, 0.03);
+  --border: rgba(246, 209, 130, 0.22);
+  --text: #f7f2ea;
+  --muted: #c9d1df;
+  --gold: #f0c87f;
+  --gold-soft: #f6dca8;
+  --maroon: #8b1f35;
+  --maroon-soft: #a62a45;
+  --success: #52dbb5;
+  --danger: #ff7b8d;
+  --shadow: rgba(1, 4, 10, 0.72);
+}
 
-const form = document.getElementById('studentForm');
-const studentNameInput = document.getElementById('studentName');
-const phoneInput = document.getElementById('phoneNumber');
-const canvas = document.getElementById('qrCanvas');
-const previewName = document.getElementById('previewName');
-const previewPhone = document.getElementById('previewPhone');
-const previewCode = document.getElementById('previewCode');
+html {
+  scroll-behavior: smooth;
+}
 
-function getStoredPasses() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Inter", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(151, 38, 61, 0.25), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(240, 200, 127, 0.12), transparent 28%),
+    linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-dark) 100%);
+  color: var(--text);
+}
+
+img,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.hero-banner {
+  position: relative;
+  min-height: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(5, 9, 16, 0.15), rgba(5, 9, 16, 0.7)),
+    radial-gradient(circle at 50% 20%, rgba(190, 115, 92, 0.32), transparent 28%),
+    radial-gradient(circle at 15% 30%, rgba(53, 88, 129, 0.44), transparent 18%),
+    radial-gradient(circle at 80% 30%, rgba(192, 82, 120, 0.42), transparent 20%),
+    linear-gradient(180deg, rgba(8, 12, 20, 0.38), rgba(10, 15, 24, 0.82)),
+    #050b13;
+}
+
+.hero-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(transparent 0%, rgba(0, 0, 0, 0.45) 100%),
+    radial-gradient(circle at 50% 72%, rgba(255, 198, 95, 0.38), rgba(255, 198, 95, 0) 22%);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 2px,
+      transparent 2px,
+      transparent 12px
+    );
+  opacity: 0.2;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  text-align: center;
+  padding: 2rem 1rem 3rem;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.brand-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 1px solid rgba(246, 209, 130, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.brand-copy {
+  text-align: left;
+}
+
+.small-label {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+}
+
+.brand-copy h1 {
+  margin: 0.15rem 0 0;
+  color: var(--gold);
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+}
+
+.divider {
+  width: min(560px, 70vw);
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(246, 209, 130, 0.9), transparent);
+}
+
+.hero-content h2 {
+  margin: 0;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(4rem, 9vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: 0.04em;
+  color: #f4efe9;
+  text-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+}
+
+.page-shell {
+  max-width: 1200px;
+  margin: -2rem auto 0;
+  padding: 0 1.25rem 3rem;
+  position: relative;
+  z-index: 2;
+}
+
+.card {
+  background: rgba(11, 20, 33, 0.78);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  box-shadow: 0 22px 48px var(--shadow);
+}
+
+.main-panel {
+  padding: 1.5rem;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-kicker {
+  margin: 0 0 0.25rem;
+  color: var(--gold-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.7rem;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+
+.header-link {
+  color: var(--gold-soft);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.pass-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.pass-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 1.2rem;
+}
+
+.pass-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.pass-form input {
+  width: 100%;
+  border: 1px solid rgba(246, 209, 130, 0.18);
+  background: rgba(8, 13, 22, 0.95);
+  border-radius: 16px;
+  padding: 0.95rem 1rem;
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+}
+
+.pass-form input:focus {
+  border-color: rgba(246, 209, 130, 0.7);
+  box-shadow: 0 0 0 3px rgba(246, 209, 130, 0.12);
+}
+
+.primary-btn,
+.secondary-btn,
+.pin-btn,
+.scan-btn,
+.reset-btn {
+  border: none;
+  cursor: pointer;
+  border-radius: 14px;
+  padding: 0.9rem 1.1rem;
+  font-weight: 700;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.primary-btn,
+.pin-btn,
+.scan-btn {
+  background: linear-gradient(135deg, var(--maroon), var(--maroon-soft));
+  color: white;
+  box-shadow: 0 14px 24px rgba(139, 31, 53, 0.28);
+}
+
+.secondary-btn,
+.reset-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.primary-btn:hover,
+.secondary-btn:hover,
+.pin-btn:hover,
+.scan-btn:hover,
+.reset-btn:hover {
+  transform: translateY(-1px);
+}
+
+.helper-text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.preview-card {
+  background: linear-gradient(180deg, rgba(21, 31, 46, 0.9), rgba(12, 18, 28, 0.95));
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 1.1rem;
+}
+
+.preview-top,
+.preview-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.school-chip,
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.school-chip {
+  background: rgba(240, 200, 127, 0.12);
+  color: var(--gold-soft);
+  border: 1px solid rgba(240, 200, 127, 0.3);
+}
+
+.status-pill {
+  background: rgba(82, 219, 181, 0.1);
+  color: var(--success);
+  border: 1px solid rgba(82, 219, 181, 0.25);
+}
+
+.preview-body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+
+.preview-body small,
+.preview-footer small {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.preview-body strong,
+.preview-footer strong {
+  font-size: 1rem;
+}
+
+.qr-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem;
+  margin: 0.8rem 0 1rem;
+}
+
+.preview-footer {
+  align-items: end;
+  margin-top: 0.6rem;
+}
+
+.organizer-shell {
+  max-width: 1200px;
+  margin: 2rem auto 3rem;
+  padding: 0 1.25rem;
+}
+
+.organizer-panel {
+  background: rgba(11, 20, 33, 0.78);
+  border: 1px solid rgba(246, 209, 130, 0.22);
+  border-radius: 28px;
+  padding: 1.5rem;
+  box-shadow: 0 22px 48px rgba(1, 4, 10, 0.72);
+}
+
+.organizer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.organizer-header h3 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.pin-box {
+  max-width: 420px;
+  display: grid;
+  gap: 0.9rem;
+  margin: 1rem auto 0;
+}
+
+.pin-box label {
+  color: var(--muted);
+}
+
+.pin-box input {
+  width: 100%;
+  border: 1px solid rgba(246, 209, 130, 0.18);
+  background: rgba(8, 13, 22, 0.95);
+  border-radius: 16px;
+  padding: 0.95rem 1rem;
+  color: white;
+}
+
+.dashboard {
+  display: none;
+}
+
+.dashboard.active {
+  display: block;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(246, 209, 130, 0.16);
+  border-radius: 18px;
+  padding: 1rem;
+}
+
+.stat-card small {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.stat-card strong {
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+}
+
+.scanner-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1.2rem;
+}
+
+#reader {
+  width: 100%;
+  min-height: 320px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(246, 209, 130, 0.22);
+  background: rgba(2, 7, 12, 0.8);
+}
+
+.scanner-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.scanner-status-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(246, 209, 130, 0.16);
+  border-radius: 18px;
+  padding: 1rem;
+  min-height: 220px;
+}
+
+.scanner-status-box h4 {
+  margin-top: 0;
+}
+
+#scanResult {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.entry-table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.8rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid rgba(246, 209, 130, 0.14);
+}
+
+th {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.38rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.status-badge.checked {
+  background: rgba(82, 219, 181, 0.1);
+  color: var(--success);
+}
+
+.status-badge.pending {
+  background: rgba(240, 200, 127, 0.12);
+  color: var(--gold-soft);
+}
+
+@media (max-width: 900px) {
+  .pass-layout,
+  .scanner-layout,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-header,
+  .organizer-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
-function savePasses(items) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, PASS_LIMIT)));
-}
-
-function generatePassCode() {
-  const random = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `MWS-${new Date().getFullYear()}-${random}`;
-}
-
-function renderPreview(pass) {
-  previewName.textContent = pass.name || 'Your Name';
-  previewPhone.textContent = pass.phone || '+91 ---------';
-  previewCode.textContent = pass.id || '--';
-
-  const payload = JSON.stringify({
-    id: pass.id,
-    name: pass.name,
-    phone: pass.phone,
-    createdAt: pass.createdAt,
-  });
-
-  QRCode.toCanvas(canvas, payload, {
-    width: 220,
-    margin: 1,
-    color: {
-      dark: '#0a1626',
-      light: '#f9f4ef',
-    },
-  }, function (error) {
-    if (error) {
-      console.error('QR generation failed', error);
-    }
-  });
-}
-
-function createPassRecord(name, phone) {
-  const timestamp = new Date().toISOString();
-  const id = generatePassCode();
-
-  return {
-    id,
-    name,
-    phone,
-    createdAt: timestamp,
-    scannedAt: '',
-    status: 'Pending',
-  };
-}
-
-function storePass(pass) {
-  const list = getStoredPasses();
-  const updated = [pass, ...list];
-  savePasses(updated);
-}
-
-form.addEventListener('submit', function (event) {
-  event.preventDefault();
-
-  const name = studentNameInput.value.trim();
-  const phone = phoneInput.value.trim();
-
-  if (!name || !phone) {
-    return;
+@media (max-width: 560px) {
+  .brand-row {
+    flex-direction: column;
+    text-align: center;
   }
 
-  const pass = createPassRecord(name, phone);
-  storePass(pass);
-  renderPreview(pass);
-  form.reset();
-});
+  .brand-copy {
+    text-align: center;
+  }
 
-function copyCode() {
-  const code = previewCode.textContent;
-  if (!code || code === '--') return;
+  .hero-content h2 {
+    font-size: 3.4rem;
+  }
 
-  navigator.clipboard.writeText(code).then(() => {
-    alert('Pass ID copied.');
-  });
+  .panel-header {
+    margin-bottom: 1rem;
+  }
 }
-
-document.getElementById('copyPass').addEventListener('click', copyCode);
-
-const sample = createPassRecord('Montfort Student', '+91 98765 43210');
-renderPreview(sample);
