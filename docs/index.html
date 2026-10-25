@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Farewell E-Pass Portal</title>
+    <meta
+      name="description"
+      content="Dark-themed farewell e-pass portal for campus entry management."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-glow glow-one"></div>
+    <div class="bg-glow glow-two"></div>
+
+    <header class="topbar">
+      <div class="brand-wrap">
+        <div class="brand-mark">F</div>
+        <div>
+          <p class="eyebrow">Farewell 2026</p>
+          <h1>Entry Pass Portal</h1>
+        </div>
+      </div>
+      <nav class="topnav">
+        <a href="#portal">Portal</a>
+        <a href="#scanner">Scanner</a>
+        <a href="#entries">Entries</a>
+      </nav>
+    </header>
+
+    <main class="container" id="portal">
+      <section class="hero card">
+        <div class="hero-copy">
+          <p class="tag">Campus celebration access control</p>
+          <h2>Check in every guest in style.</h2>
+          <p>
+            Create digital e-passes for students, scan codes at the gate, and track
+            who has entered the farewell with a single dashboard.
+          </p>
+          <div class="hero-stats">
+            <div>
+              <strong id="totalStudents">0</strong>
+              <span>passes</span>
+            </div>
+            <div>
+              <strong id="checkedInTotal">0</strong>
+              <span>checked in</span>
+            </div>
+            <div>
+              <strong id="pendingTotal">0</strong>
+              <span>pending</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="mini-pass">
+            <div class="mini-pass-header">
+              <span>Gate Pass</span>
+              <span class="chip success">Active</span>
+            </div>
+            <div class="mini-pass-body">
+              <div>
+                <small>Name</small>
+                <strong>Riya Shah</strong>
+              </div>
+              <div>
+                <small>Entry</small>
+                <strong>VIP</strong>
+              </div>
+            </div>
+            <div class="mini-qr"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid two-col">
+        <div class="card form-card">
+          <div class="section-head">
+            <h3>Create student pass</h3>
+            <span class="status-badge">Live</span>
+          </div>
+
+          <form id="studentForm">
+            <div class="field-row">
+              <label>
+                Student name
+                <input type="text" id="studentName" placeholder="Aarav Mehta" required />
+              </label>
+            </div>
+
+            <div class="field-row two">
+              <label>
+                Roll number
+                <input type="text" id="rollNumber" placeholder="BCA-2041" required />
+              </label>
+              <label>
+                Department
+                <input type="text" id="department" placeholder="Computer Science" required />
+              </label>
+            </div>
+
+            <div class="field-row two">
+              <label>
+                Pass type
+                <select id="passType">
+                  <option value="General">General</option>
+                  <option value="VIP">VIP</option>
+                  <option value="Volunteer">Volunteer</option>
+                  <option value="Faculty">Faculty</option>
+                </select>
+              </label>
+              <label>
+                Contact
+                <input type="tel" id="contact" placeholder="+91 98765 43210" />
+              </label>
+            </div>
+
+            <div class="field-row">
+              <label>
+                Notes
+                <textarea id="notes" rows="3" placeholder="Prefers aisle seating / guest of faculty"></textarea>
+              </label>
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="primary">Generate pass</button>
+              <button type="button" class="ghost" id="resetDemo">Reset demo</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card preview-card">
+          <div class="section-head">
+            <h3>Pass preview</h3>
+            <span class="status-badge alt">Preview</span>
+          </div>
+
+          <div class="pass-display" id="passDisplay">
+            <div class="pass-topbar">
+              <div>
+                <small class="muted">Farewell 2026</small>
+                <h4 id="previewName">Student Name</h4>
+              </div>
+              <span class="chip" id="previewType">General</span>
+            </div>
+
+            <div class="pass-meta">
+              <div>
+                <small>Roll</small>
+                <strong id="previewRoll">--</strong>
+              </div>
+              <div>
+                <small>Dept</small>
+                <strong id="previewDept">--</strong>
+              </div>
+            </div>
+
+            <div class="qr-block">
+              <canvas id="qrCanvas" width="210" height="210"></canvas>
+            </div>
+
+            <div class="pass-bottom">
+              <div>
+                <small>Pass ID</small>
+                <strong id="previewCode">--</strong>
+              </div>
+              <button type="button" class="ghost small" id="copyCodeBtn">Copy code</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scanner-section card" id="scanner">
+        <div class="section-head">
+          <h3>Scanner desk</h3>
+          <span class="status-badge alt">Scan / verify</span>
+        </div>
+
+        <div class="scanner-grid">
+          <div class="scanner-inputs">
+            <label>
+              Enter pass code or scanned ID
+              <input
+                type="text"
+                id="scanInput"
+                placeholder="FARE-2026-XXXXXX or student code"
+              />
+            </label>
+            <div class="actions">
+              <button type="button" class="primary" id="checkInBtn">Check in guest</button>
+              <button type="button" class="ghost" id="clearScan">Clear</button>
+            </div>
+            <div class="scan-message" id="scanMessage"></div>
+          </div>
+
+          <div class="scanner-list">
+            <h4>Recent arrivals</h4>
+            <ul id="entryList" class="entry-list"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="entries">
+        <div class="section-head">
+          <h3>Entry dashboard</h3>
+          <span class="status-badge alt">Logged</span>
+        </div>
+
+        <div class="dashboard-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Pass type</th>
+                <th>Code</th>
+                <th>Status</th>
+                <th>Checked in</th>
+              </tr>
+            </thead>
+            <tbody id="studentTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
+
