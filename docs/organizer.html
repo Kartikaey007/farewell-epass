@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Organizer Portal | Montfort Farewell</title>
+    <meta name="description" content="Event organizer portal for scanning farewell e-pass QR codes." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .organizer-shell {
+        max-width: 1200px;
+        margin: 2rem auto 3rem;
+        padding: 0 1.25rem;
+      }
+
+      .organizer-panel {
+        background: rgba(11, 20, 33, 0.78);
+        border: 1px solid rgba(246, 209, 130, 0.22);
+        border-radius: 28px;
+        padding: 1.5rem;
+        box-shadow: 0 22px 48px rgba(1, 4, 10, 0.72);
+      }
+
+      .organizer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .organizer-header h3 {
+        margin: 0;
+        font-size: 2rem;
+      }
+
+      .pin-box {
+        max-width: 420px;
+        display: grid;
+        gap: 0.9rem;
+        margin: 1rem auto 0;
+      }
+
+      .pin-box input {
+        width: 100%;
+        border: 1px solid rgba(246, 209, 130, 0.18);
+        background: rgba(8, 13, 22, 0.95);
+        border-radius: 16px;
+        padding: 0.95rem 1rem;
+        color: white;
+      }
+
+      .dashboard {
+        display: none;
+      }
+
+      .dashboard.active {
+        display: block;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .stat-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(246, 209, 130, 0.16);
+        border-radius: 18px;
+        padding: 1rem;
+      }
+
+      .stat-card small {
+        display: block;
+        color: var(--muted);
+        margin-bottom: 0.4rem;
+      }
+
+      .stat-card strong {
+        font-size: clamp(1.7rem, 3vw, 2.4rem);
+      }
+
+      .scanner-layout {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 1.2rem;
+      }
+
+      #reader {
+        width: 100%;
+        min-height: 320px;
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(246, 209, 130, 0.22);
+        background: rgba(2, 7, 12, 0.8);
+      }
+
+      .scanner-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 0.8rem;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.85rem 0.75rem;
+        border-bottom: 1px solid rgba(246, 209, 130, 0.14);
+      }
+
+      th {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0.38rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+
+      .status-badge.checked {
+        background: rgba(82, 219, 181, 0.1);
+        color: var(--success);
+      }
+
+      .status-badge.pending {
+        background: rgba(240, 200, 127, 0.12);
+        color: var(--gold-soft);
+      }
+
+      @media (max-width: 900px) {
+        .scanner-layout,
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero-banner" style="min-height: 240px;">
+      <div class="hero-overlay"></div>
+      <div class="hero-content" style="padding-bottom: 1.5rem;">
+        <div class="brand-row">
+          <img src="logo.svg" alt="Montfort logo" class="brand-logo" />
+          <div class="brand-copy">
+            <p class="small-label">Organizer Panel</p>
+            <h1 style="letter-spacing: 0.15em;">MONTFORT</h1>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <h2 style="font-size: clamp(2.7rem, 7vw, 5.5rem);">FAREWELL 2026</h2>
+      </div>
+    </header>
+
+    <main class="organizer-shell">
+      <section class="organizer-panel">
+        <div class="organizer-header">
+          <h3>Entry Manager</h3>
+          <a class="header-link" href="index.html">Student portal</a>
+        </div>
+
+        <div id="pinScreen">
+          <div class="pin-box">
+            <label style="color: var(--muted);">Enter organizer PIN</label>
+            <input id="pinInput" type="password" placeholder="••••••" />
+            <button id="pinSubmit" class="pin-btn" type="button">Open dashboard</button>
+          </div>
+        </div>
+
+        <div id="dashboard" class="dashboard">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <small>Total Passes</small>
+              <strong id="totalPasses">0</strong>
+            </div>
+            <div class="stat-card">
+              <small>Checked In</small>
+              <strong id="checkedInCount">0</strong>
+            </div>
+            <div class="stat-card">
+              <small>Pending</small>
+              <strong id="pendingCount">0</strong>
+            </div>
+          </div>
+
+          <div class="scanner-layout">
+            <div>
+              <div id="reader"></div>
+              <div class="scanner-actions">
+                <button id="startScan" class="scan-btn" type="button">Start QR Scan</button>
+                <button id="stopScan" class="reset-btn" type="button">Stop</button>
+              </div>
+            </div>
+
+            <div class="scanner-status-box" style="background: rgba(255,255,255,0.02); border:1px solid rgba(246,209,130,0.16); border-radius:18px; padding:1rem; min-height: 220px;">
+              <h4 style="margin-top:0;">Last scan</h4>
+              <div id="scanResult" style="color: var(--muted); line-height: 1.7;">Waiting for QR scan...</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.5rem;">
+            <h4 style="margin:0 0 0.5rem;">Registered entries</h4>
+            <div style="overflow-x:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Pass ID</th>
+                    <th>Status</th>
+                    <th>Scanned at</th>
+                  </tr>
+                </thead>
+                <tbody id="entryTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+    <script src="organizer.js"></script>
+  </body>
+</html>
