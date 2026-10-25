@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Farewell E-Pass Portal</title>
+    <title>Montfort World School | Class XII Farewell E-Pass</title>
     <meta
       name="description"
-      content="Dark-themed farewell e-pass portal for campus entry management."
+      content="Dark-themed farewell e-pass portal for Montfort World School Class XII farewell event."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,10 +22,10 @@
 
     <header class="topbar">
       <div class="brand-wrap">
-        <div class="brand-mark">F</div>
+        <img src="logo.svg" alt="Montfort World School logo" class="school-logo" />
         <div>
-          <p class="eyebrow">Farewell 2026</p>
-          <h1>Entry Pass Portal</h1>
+          <p class="eyebrow">Class XII Farewell 2026</p>
+          <h1>Montfort World School</h1>
         </div>
       </div>
       <nav class="topnav">
@@ -38,11 +38,10 @@
     <main class="container" id="portal">
       <section class="hero card">
         <div class="hero-copy">
-          <p class="tag">Campus celebration access control</p>
-          <h2>Check in every guest in style.</h2>
+          <p class="tag">School farewell access control</p>
+          <h2>Welcome to the Class XII Farewell.</h2>
           <p>
-            Create digital e-passes for students, scan codes at the gate, and track
-            who has entered the farewell with a single dashboard.
+            Create digital entry passes for students, scan codes at the gate, and keep a live record of everyone entering the farewell celebration.
           </p>
           <div class="hero-stats">
             <div>
@@ -63,17 +62,17 @@
         <div class="hero-visual">
           <div class="mini-pass">
             <div class="mini-pass-header">
-              <span>Gate Pass</span>
+              <span>Farewell Pass</span>
               <span class="chip success">Active</span>
             </div>
             <div class="mini-pass-body">
               <div>
                 <small>Name</small>
-                <strong>Riya Shah</strong>
+                <strong>Riya Sharma</strong>
               </div>
               <div>
-                <small>Entry</small>
-                <strong>VIP</strong>
+                <small>Batch</small>
+                <strong>Class XII</strong>
               </div>
             </div>
             <div class="mini-qr"></div>
@@ -84,7 +83,7 @@
       <section class="grid two-col">
         <div class="card form-card">
           <div class="section-head">
-            <h3>Create student pass</h3>
+            <h3>Create e-pass</h3>
             <span class="status-badge">Live</span>
           </div>
 
@@ -92,18 +91,18 @@
             <div class="field-row">
               <label>
                 Student name
-                <input type="text" id="studentName" placeholder="Aarav Mehta" required />
+                <input type="text" id="studentName" placeholder="Aarav Sharma" required />
               </label>
             </div>
 
             <div class="field-row two">
               <label>
                 Roll number
-                <input type="text" id="rollNumber" placeholder="BCA-2041" required />
+                <input type="text" id="rollNumber" placeholder="XII-A-17" required />
               </label>
               <label>
-                Department
-                <input type="text" id="department" placeholder="Computer Science" required />
+                Class / House
+                <input type="text" id="department" placeholder="Class XII-A / Blue House" required />
               </label>
             </div>
 
@@ -111,7 +110,7 @@
               <label>
                 Pass type
                 <select id="passType">
-                  <option value="General">General</option>
+                  <option value="Student">Student</option>
                   <option value="VIP">VIP</option>
                   <option value="Volunteer">Volunteer</option>
                   <option value="Faculty">Faculty</option>
@@ -119,14 +118,14 @@
               </label>
               <label>
                 Contact
-                <input type="tel" id="contact" placeholder="+91 98765 43210" />
+                <input type="tel" id="contact" placeholder="+91 98xxxxxx" />
               </label>
             </div>
 
             <div class="field-row">
               <label>
                 Notes
-                <textarea id="notes" rows="3" placeholder="Prefers aisle seating / guest of faculty"></textarea>
+                <textarea id="notes" rows="3" placeholder="Hostel / transport / special seating request"></textarea>
               </label>
             </div>
 
@@ -146,10 +145,10 @@
           <div class="pass-display" id="passDisplay">
             <div class="pass-topbar">
               <div>
-                <small class="muted">Farewell 2026</small>
+                <small class="muted">Montfort World School</small>
                 <h4 id="previewName">Student Name</h4>
               </div>
-              <span class="chip" id="previewType">General</span>
+              <span class="chip" id="previewType">Student</span>
             </div>
 
             <div class="pass-meta">
@@ -158,7 +157,7 @@
                 <strong id="previewRoll">--</strong>
               </div>
               <div>
-                <small>Dept</small>
+                <small>Class</small>
                 <strong id="previewDept">--</strong>
               </div>
             </div>
@@ -180,7 +179,7 @@
 
       <section class="scanner-section card" id="scanner">
         <div class="section-head">
-          <h3>Scanner desk</h3>
+          <h3>Gate scanner</h3>
           <span class="status-badge alt">Scan / verify</span>
         </div>
 
@@ -191,7 +190,7 @@
               <input
                 type="text"
                 id="scanInput"
-                placeholder="FARE-2026-XXXXXX or student code"
+                placeholder="MWS-2026-XXXXXX"
               />
             </label>
             <div class="actions">
@@ -235,4 +234,3 @@
     <script src="app.js"></script>
   </body>
 </html>
-
